@@ -1,16 +1,16 @@
 import alphabets
 
 raw_folder = ''
-train_data = '/root/Design/Data'
-test_data = '/root/Design/Data'
+train_data = '/root/Design/DATA'
+test_data = '/root/Design/DATA'
 pretrain_model = ''
-output_dir = ''
+output_dir = 'models/'
 random_sample = True
 random_seed = 3484
-using_cuda = False
+using_cuda = True
 keep_ratio = False
 gpu_id = '5'
-model_dir = './w160_bs64_model'
+model_dir = './models'
 data_worker = 1
 batch_size = 16
 img_height = 32

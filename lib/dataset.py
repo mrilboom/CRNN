@@ -11,7 +11,7 @@ import six
 import sys
 from PIL import Image
 import numpy as np
-
+import utils.TIA.transformer as TT
 
 class lmdbDataset(Dataset):
 
@@ -58,7 +58,11 @@ class lmdbDataset(Dataset):
 
             if self.transform is not None:
                 img = self.transform(img)
-
+            # test
+            # from matplotlib import pyplot as plt
+            # img.save("a.png")
+            img = TT.TIA_trans(img)
+            # img.save("b.png")
             label_key = 'label-%09d' % index
             label = txn.get(label_key.encode())
 

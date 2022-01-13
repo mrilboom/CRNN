@@ -4,7 +4,7 @@
 # import cv2
 import numpy as np
 # from transform import get_perspective_transform, warp_perspective
-from warp_mls import WarpMLS
+from utils.TIA.warp_mls import WarpMLS
 
 
 def distort(src, segment):
@@ -22,7 +22,9 @@ def distort(src, segment):
     src_pts.append([img_w, 0])
     src_pts.append([img_w, img_h])
     src_pts.append([0, img_h])
-
+    # print(f"thresh:{thresh}")
+    if thresh==0:
+        print(f"size:h {img_h},w {img_w}")
     dst_pts.append([np.random.randint(thresh), np.random.randint(thresh)])
     dst_pts.append([img_w - np.random.randint(thresh), np.random.randint(thresh)])
     dst_pts.append([img_w - np.random.randint(thresh), img_h - np.random.randint(thresh)])
