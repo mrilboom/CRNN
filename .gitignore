@@ -1,2 +1,3 @@
-./crnnout
-./*.txt
+/crnnout/
+*.txt
+**/__pycache__/

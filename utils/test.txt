@@ -1,6 +1,0 @@
-/root/Design/myProj/actData/act_06.jpg ./test/test_DB_act_06.jpg.txt
-/root/Design/myProj/actData/act_05.jpg ./test/test_DB_act_05.jpg.txt
-/root/Design/myProj/actData/act_04.jpg ./test/test_DB_act_04.jpg.txt
-/root/Design/myProj/actData/act_02.jpg ./test/test_DB_act_02.jpg.txt
-/root/Design/myProj/actData/act_01.jpg ./test/test_DB_act_01.jpg.txt
-/root/Design/myProj/actData/act_03.jpg ./test/test_DB_act_03.jpg.txt
