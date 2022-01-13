@@ -15,7 +15,7 @@ import utils.TIA.transformer as TT
 
 class lmdbDataset(Dataset):
 
-    def __init__(self, root=None, transform=None, target_transform=None):
+    def __init__(self, root=None,is_training=False ,transform=None, target_transform=None):
         self.env = lmdb.open(
             root,
             max_readers=1,
@@ -36,6 +36,7 @@ class lmdbDataset(Dataset):
 
         self.transform = transform
         self.target_transform = target_transform
+        self.is_training=is_training
 
     def __len__(self):
         return self.nSamples
@@ -58,11 +59,9 @@ class lmdbDataset(Dataset):
 
             if self.transform is not None:
                 img = self.transform(img)
-            # test
-            # from matplotlib import pyplot as plt
-            # img.save("a.png")
-            img = TT.TIA_trans(img)
-            # img.save("b.png")
+            if self.is_training:
+                img = TT.TIA_trans(img)
+
             label_key = 'label-%09d' % index
             label = txn.get(label_key.encode())
 

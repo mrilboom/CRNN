@@ -1,11 +1,13 @@
 #coding=utf-8
-from torchsummary import summary
+import time
+import shutil
+
 import Config
 import random
 import os
 import numpy as np
 import torch
-from warpctc_pytorch import CTCLoss
+from torch.nn import CTCLoss
 import torch.backends.cudnn as cudnn
 import lib.dataset
 import lib.convert
@@ -13,9 +15,8 @@ import lib.utility
 from torch.autograd import Variable
 import Net.net_new as Net
 import torch.optim as optim
-from torch.autograd import gradcheck
 
-def val(net, da, criterion, writer,epoch,max_iter=100):
+def val(net, da, criterion, writer, global_step, max_iter=100):
     print('Start val')
 
     for p in net.parameters():
@@ -35,6 +36,12 @@ def val(net, da, criterion, writer,epoch,max_iter=100):
         data = val_iter.next()
         i += 1
         cpu_images, cpu_texts = data
+        if i == max_iter - 1:
+            show_image = cpu_images[0].cpu().clone()
+            show_image = show_image / 2 + 0.5  # unnormalize
+            show_image = show_image.numpy()
+            show_image = np.transpose(show_image, (1, 2, 0))
+
         batch_size = cpu_images.size(0)
         lib.dataset.loadData(image, cpu_images)
         t, l = converter.encode(cpu_texts)
@@ -64,8 +71,9 @@ def val(net, da, criterion, writer,epoch,max_iter=100):
 
     accuracy = n_correct / float(max_iter * Config.batch_size)
     print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
-    writer.add_scalar('EVAL/acc', accuracy, epoch)
-    writer.add_scalar('EVAL/loss', loss_avg.val(), epoch)
+    writer.add_scalar('EVAL/acc', accuracy, global_step)
+    writer.add_scalar('EVAL/loss', loss_avg.val(), global_step)
+
     return accuracy
 
 
@@ -117,7 +125,7 @@ if __name__ == '__main__':
         cuda = False
         print('Using cpu mode')
 
-    train_dataset = lib.dataset.lmdbDataset(root=Config.train_data)
+    train_dataset = lib.dataset.lmdbDataset(root=Config.train_data,is_training=True)
     test_dataset = lib.dataset.lmdbDataset(root=Config.test_data, transform=lib.dataset.resizeNormalize((Config.img_width, Config.img_height)))
     assert train_dataset
     print(train_dataset)
@@ -142,6 +150,7 @@ if __name__ == '__main__':
     
     # net.apply(lib.utility.weights_init)
     if not Config.pretrain_model:
+        acc = 0
         acc_best = 0
         global_step = 0
         epoch = 0
@@ -150,6 +159,7 @@ if __name__ == '__main__':
         net.load_state_dict(checkpoint['state_dict'])
         global_step = checkpoint['global_step']
         epoch = checkpoint['epoch']
+        acc_best = checkpoint['acc_best']
 
     image = torch.FloatTensor(Config.batch_size, 3, Config.img_height, Config.img_width)
     text = torch.IntTensor(Config.batch_size * 5)
@@ -178,14 +188,15 @@ if __name__ == '__main__':
     try:
         # add graph
         in_channels = 1
-        dummy_input = torch.zeros(1, in_channels, 32, 160)
+        dummy_input = torch.zeros(1, in_channels, 32, 160, device='cuda')
         writer.add_graph(net, dummy_input)
         torch.cuda.empty_cache()
-    except:
-        print('add graph to tensorboard failed')
+    except Exception as e:
+        print(f'{e}\n add graph to tensorboard failed')
     for epoch in range(epoch,Config.epoch):
         train_iter = iter(train_loader)
         i = 0
+        t0 = time.time()
         while i < len(train_loader):
             for p in net.parameters():
                 p.requires_grad = True
@@ -196,18 +207,21 @@ if __name__ == '__main__':
             i += 1
 
             if i % Config.display_interval == 0:
-                
-                print('[%d/%d][%d/%d] Loss: %f' %
-                      (epoch, Config.epoch, i, len(train_loader), loss_avg.val()))
-                # tensorboard
-                writer.add_scalar('TRAIN/LOSS', loss_avg.val(), epoch)
+                global_step+=1
+                print(f'[{epoch}/{Config.epoch}][{i}/{len(train_loader)}] Loss: {loss_avg.val()}    '
+                      f'next val eta--{int((Config.test_interval - i % Config.test_interval) / Config.display_interval * (time.time() - t0))}s    '
+                      f'epoch eta --{int((len(train_loader) - i) / Config.display_interval * (time.time() - t0))}s   '
+                      f'global_step:{global_step}')
+                t0 = time.time()
+              # tensorboard
+                writer.add_scalar('TRAIN/LOSS', loss_avg.val(), global_step)
                 # 学习率策略
                 # writer.add_scalar('TRAIN/lr', lr, epoch)
                 loss_avg.reset()
-            
-            if i % Config.test_interval == 0:
-                acc = val(net, test_dataset, criterion,writer,epoch)
 
+            if i % Config.test_interval == 0:
+                acc = val(net, test_dataset, criterion,writer,global_step)
+                t0 = time.time()
             # do checkpointing
             if i % Config.save_interval == 0:
                 state = {
