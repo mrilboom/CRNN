@@ -34,14 +34,17 @@ def val(net, da, criterion, writer, global_step, max_iter=100):
     max_iter = min(max_iter, len(data_loader))
     for i in range(max_iter):
         data = val_iter.next()
-        i += 1
         cpu_images, cpu_texts = data
         if i == max_iter - 1:
-            show_image = cpu_images[0].cpu().clone()
+            show_image = cpu_images[-1].cpu().clone()
             show_image = show_image / 2 + 0.5  # unnormalize
             show_image = show_image.numpy()
             show_image = np.transpose(show_image, (1, 2, 0))
-
+            from matplotlib import pyplot as plt
+            import cv2
+            show_image = cv2.cvtColor(show_image, cv2.COLOR_BGR2RGB)
+            # plt.imshow(show_image)
+            # plt.show()
         batch_size = cpu_images.size(0)
         lib.dataset.loadData(image, cpu_images)
         t, l = converter.encode(cpu_texts)
@@ -64,7 +67,6 @@ def val(net, da, criterion, writer, global_step, max_iter=100):
         for pred, target in zip(sim_preds, list_1):
             if pred == target:
                 n_correct += 1
-
     raw_preds = converter.decode(preds.data, preds_size.data, raw=True)[:Config.test_disp]
     for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
         print('%-20s => %-20s, gt: %-20s' % (raw_pred, pred, gt.decode()))
@@ -73,9 +75,9 @@ def val(net, da, criterion, writer, global_step, max_iter=100):
     print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
     writer.add_scalar('EVAL/acc', accuracy, global_step)
     writer.add_scalar('EVAL/loss', loss_avg.val(), global_step)
+    writer.add_image(f"EVAL RESULTS/PREDS:{sim_preds[-1]}", show_image, global_step,dataformats='HWC')
 
     return accuracy
-
 
 def trainBatch(net, criterion, optimizer, train_iter):
     data = train_iter.next()
@@ -102,14 +104,9 @@ def save_checkpoint(state, is_best, filename='checkpoint.pth'):
         shutil.copyfile(filename, 'model_best.pth')
 
 if __name__ == '__main__':
-    # net = Net.CRNN(5990)
-    # # print(net)
-    # summary(net,(1,32,160))
-    if not os.path.exists(Config.model_dir):
-        os.mkdir(Config.model_dir)
 
-    print("image scale: [%s,%s]\nmodel_save_path: %s\ngpu_id: %s\nbatch_size: %s" %
-          (Config.img_height, Config.img_width, Config.model_dir, Config.gpu_id, Config.batch_size))
+    print("image scale: [%s,%s]\ngpu_id: %s\nbatch_size: %s" %
+          (Config.img_height, Config.img_width, Config.gpu_id, Config.batch_size))
 
     random.seed(Config.random_seed)
     np.random.seed(Config.random_seed)
@@ -184,7 +181,7 @@ if __name__ == '__main__':
 
     # tensorboard
     from torch.utils.tensorboard import SummaryWriter
-    writer = SummaryWriter("./crnnout")
+    writer = SummaryWriter(Config.output_dir+"/"+Config.proj_name)
     try:
         # add graph
         in_channels = 1
@@ -201,13 +198,12 @@ if __name__ == '__main__':
             for p in net.parameters():
                 p.requires_grad = True
             net.train()
-
+            global_step+=1
             cost = trainBatch(net, criterion, optimizer, train_iter)
             loss_avg.add(cost)
             i += 1
 
             if i % Config.display_interval == 0:
-                global_step+=1
                 print(f'[{epoch}/{Config.epoch}][{i}/{len(train_loader)}] Loss: {loss_avg.val()}    '
                       f'next val eta--{int((Config.test_interval - i % Config.test_interval) / Config.display_interval * (time.time() - t0))}s    '
                       f'epoch eta --{int((len(train_loader) - i) / Config.display_interval * (time.time() - t0))}s   '
@@ -232,6 +228,6 @@ if __name__ == '__main__':
                 }
                 if acc>acc_best:
                     acc_best = acc
-                    shutil.copyfile(f'{Config.output_dir}/model_current.pth', '{Config.output_dir}/model_best.pth')
+                    shutil.copyfile(f'{Config.output_dir}/model_current.pth', f'{Config.output_dir}/model_best.pth')
                 torch.save(state, f'{Config.output_dir}/model_current.pth')
 
