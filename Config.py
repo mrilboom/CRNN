@@ -1,16 +1,16 @@
 import alphabets
 
+proj_name = 'crnn_mobilenetV3'
 raw_folder = ''
-train_data = r'F:\Design\train'
-test_data = r'F:\Design\test'
-pretrain_model = r'C:\Users\mrilboom\PycharmProjects\Design\CRNN-master\crnnout\model_current.pth'
+train_data = r'/root/Design/DATA'
+test_data = r'/root/Design/DATA'
+pretrain_model = r''
 output_dir = './crnnout'
 random_sample = True
 random_seed = 3484
 using_cuda = True
 keep_ratio = False
 gpu_id = '0'
-model_dir = './models'
 data_worker = 0
 batch_size = 32
 img_height = 32
