@@ -16,7 +16,7 @@ from torch.autograd import Variable
 import Net.net_new as Net
 import torch.optim as optim
 
-def val(net, da, criterion, writer, global_step, max_iter=100):
+def val(net, da, criterion, writer, global_step, max_iter=30):
     print('Start val')
 
     for p in net.parameters():
@@ -24,7 +24,7 @@ def val(net, da, criterion, writer, global_step, max_iter=100):
 
     net.eval()
     data_loader = torch.utils.data.DataLoader(
-        da, shuffle=True, batch_size=Config.batch_size, num_workers=int(Config.data_worker))
+        da, shuffle=True, batch_size=Config.test_batch_num, num_workers=int(Config.data_worker))
     val_iter = iter(data_loader)
 
     i = 0
@@ -40,9 +40,9 @@ def val(net, da, criterion, writer, global_step, max_iter=100):
             show_image = show_image / 2 + 0.5  # unnormalize
             show_image = show_image.numpy()
             show_image = np.transpose(show_image, (1, 2, 0))
-            from matplotlib import pyplot as plt
             import cv2
             show_image = cv2.cvtColor(show_image, cv2.COLOR_BGR2RGB)
+            # from matplotlib import pyplot as plt
             # plt.imshow(show_image)
             # plt.show()
         batch_size = cpu_images.size(0)
