@@ -99,11 +99,6 @@ def trainBatch(net, criterion, optimizer, train_iter):
     return cost
 
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth')
-
 if __name__ == '__main__':
 
     print("image scale: [%s,%s]\ngpu_id: %s\nbatch_size: %s" %
@@ -160,7 +155,7 @@ if __name__ == '__main__':
         epoch = checkpoint['epoch']
         acc_best = checkpoint['acc_best']
         current_step = checkpoint['current_step']
-
+    current_step = 0
     image = torch.FloatTensor(Config.batch_size, 3, Config.img_height, Config.img_width)
     text = torch.IntTensor(Config.batch_size * 5)
     length = torch.IntTensor(Config.batch_size)
@@ -232,6 +227,6 @@ if __name__ == '__main__':
                 }
                 if acc>acc_best:
                     acc_best = acc
-                    shutil.copyfile(f'{Config.output_dir}/model_current.pth', f'{Config.output_dir}/model_best.pth')
-                torch.save(state, f'{Config.output_dir}/model_current.pth')
+                    shutil.copyfile(f'{Config.output_dir}/{Config.proj_name}/model_current.pth', f'{Config.output_dir}/{Config.proj_name}/model_best.pth')
+                torch.save(state, f'{Config.output_dir}/{Config.proj_name}/model_current.pth')
 
