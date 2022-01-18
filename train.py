@@ -75,7 +75,8 @@ def val(net, da, criterion, writer, global_step, max_iter=30):
     print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
     writer.add_scalar('EVAL/acc', accuracy, global_step)
     writer.add_scalar('EVAL/loss', loss_avg.val(), global_step)
-    writer.add_image(f"EVAL RESULTS/PREDS:{sim_preds[-1]}", show_image, global_step,dataformats='HWC')
+    if accuracy>0.5:
+        writer.add_image(f"EVAL RESULTS/acc:{accuracy} - {sim_preds[-1]}", show_image, global_step,dataformats='HWC')
 
     return accuracy
 
