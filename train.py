@@ -71,12 +71,12 @@ def val(net, da, criterion, writer, global_step, max_iter=30):
     for raw_pred, pred, gt in zip(raw_preds, sim_preds, cpu_texts):
         print('%-20s => %-20s, gt: %-20s' % (raw_pred, pred, gt.decode()))
 
-    accuracy = n_correct / float(max_iter * Config.batch_size)
+    accuracy = n_correct / float(max_iter * Config.test_batch_num)
     print('Test loss: %f, accuray: %f' % (loss_avg.val(), accuracy))
     writer.add_scalar('EVAL/acc', accuracy, global_step)
     writer.add_scalar('EVAL/loss', loss_avg.val(), global_step)
     if accuracy>0.5:
-        writer.add_image(f"EVAL RESULTS/acc:{accuracy} - {sim_preds[-1]}", show_image, global_step,dataformats='HWC')
+        writer.add_image(f"EVAL RESULTS/acc:{accuracy:.2g} - {sim_preds[-1]}", show_image, global_step,dataformats='HWC')
 
     return accuracy
 
@@ -152,12 +152,14 @@ if __name__ == '__main__':
         acc_best = 0
         global_step = 0
         epoch = 0
+        current_step=0
     else:
         checkpoint = torch.load(Config.pretrain_model, map_location=torch.device('cpu'))
         net.load_state_dict(checkpoint['state_dict'])
         global_step = checkpoint['global_step']
         epoch = checkpoint['epoch']
         acc_best = checkpoint['acc_best']
+        current_step = checkpoint['current_step']
 
     image = torch.FloatTensor(Config.batch_size, 3, Config.img_height, Config.img_width)
     text = torch.IntTensor(Config.batch_size * 5)
@@ -193,7 +195,7 @@ if __name__ == '__main__':
         print(f'{e}\n add graph to tensorboard failed')
     for epoch in range(epoch,Config.epoch):
         train_iter = iter(train_loader)
-        i = 0
+        i = current_step
         t0 = time.time()
         while i < len(train_loader):
             for p in net.parameters():
@@ -224,6 +226,7 @@ if __name__ == '__main__':
                 state = {
                     'epoch': epoch,
                     'global_step': global_step,
+                    'current_step': global_step,
                     'state_dict': net.state_dict(),
                     'acc_best': acc_best,
                 }

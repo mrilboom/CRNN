@@ -59,8 +59,8 @@ class lmdbDataset(Dataset):
 
             if self.transform is not None:
                 img = self.transform(img)
-            if self.is_training:
-                img = TT.TIA_trans(img)
+            # if self.is_training:
+            #     img = TT.TIA_trans(img)
 
             label_key = 'label-%09d' % index
             label = txn.get(label_key.encode())
