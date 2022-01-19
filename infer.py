@@ -6,16 +6,16 @@ from torch.autograd import Variable
 import lib.convert
 import lib.dataset
 from PIL import Image
-import Net.net as Net
+import Net.net_new as Net
 import alphabets
 import sys
 import Config
 
-os.environ['CUDA_VISIBLE_DEVICES'] = "4"
+os.environ['CUDA_VISIBLE_DEVICES'] = "0"
 
-crnn_model_path = '/root/Design/myProj/model/fit2_50_100.pth'
+crnn_model_path = '/home/zjj/CRNN/crnnout/crnn_mobilenetV3/model_best.pth'
 IMG_ROOT = './test_images'
-running_mode = 'cpu'
+running_mode = 'gpu'
 alphabet = alphabets.alphabet
 nclass = len(alphabet) + 1
 
@@ -55,9 +55,9 @@ if __name__ == '__main__':
     model = Net.CRNN(nclass)
     if running_mode == 'gpu' and torch.cuda.is_available():
         model = model.cuda()
-        model.load_state_dict(torch.load(crnn_model_path))
+        model.load_state_dict(torch.load(crnn_model_path)["state_dict"])
     else:
-        model.load_state_dict(torch.load(crnn_model_path, map_location='cpu'))
+        model.load_state_dict(torch.load(crnn_model_path)["state_dict"])
 
     print('loading pretrained model from {0}'.format(crnn_model_path))
 
