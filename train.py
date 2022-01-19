@@ -142,20 +142,21 @@ if __name__ == '__main__':
     net = Net.CRNN(n_class)
     
     # net.apply(lib.utility.weights_init)
-    if not Config.pretrain_model:
-        acc = 0
-        acc_best = 0
-        global_step = 0
-        epoch = 0
-        current_step=0
-    else:
+    
+    acc = 0
+    acc_best = 0.5
+    global_step = 0
+    epoch = 0
+    current_step=0
+    if Config.pretrain_model:
         checkpoint = torch.load(Config.pretrain_model, map_location=torch.device('cpu'))
         net.load_state_dict(checkpoint['state_dict'])
-        global_step = checkpoint['global_step']
-        epoch = checkpoint['epoch']
-        acc_best = checkpoint['acc_best']
-        current_step = checkpoint['current_step']
-    current_step = 0
+        if not Config.finetune:
+            global_step = checkpoint['global_step']
+            epoch = checkpoint['epoch']
+            acc_best = checkpoint['acc_best']
+            current_step = checkpoint['current_step']
+
     image = torch.FloatTensor(Config.batch_size, 3, Config.img_height, Config.img_width)
     text = torch.IntTensor(Config.batch_size * 5)
     length = torch.IntTensor(Config.batch_size)
@@ -225,8 +226,9 @@ if __name__ == '__main__':
                     'state_dict': net.state_dict(),
                     'acc_best': acc_best,
                 }
+                torch.save(state, f'{Config.output_dir}/{Config.proj_name}/model_current.pth')
                 if acc>acc_best:
                     acc_best = acc
                     shutil.copyfile(f'{Config.output_dir}/{Config.proj_name}/model_current.pth', f'{Config.output_dir}/{Config.proj_name}/model_best.pth')
-                torch.save(state, f'{Config.output_dir}/{Config.proj_name}/model_current.pth')
+                
 
