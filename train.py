@@ -149,7 +149,7 @@ if __name__ == '__main__':
     epoch = 0
     current_step=0
     if Config.pretrain_model:
-        checkpoint = torch.load(Config.pretrain_model, map_location=torch.device('cpu'))
+        checkpoint = torch.load(Config.pretrain_model)
         net.load_state_dict(checkpoint['state_dict'])
         if not Config.finetune:
             global_step = checkpoint['global_step']
